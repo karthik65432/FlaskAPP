@@ -1,10 +1,12 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import pytz
+from forms import RegistrationForm, LoginForm
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posts.db'
+app.config['SECRET_KEY'] = '9886144146'
 db = SQLAlchemy(app)
 
 
@@ -20,8 +22,8 @@ class Blogpost(db.Model):
 
 
 @app.route('/')
-def index():
-    return render_template('index.html')
+def home():
+    return render_template('home.html')
 
 
 @app.route('/posts')
@@ -62,7 +64,24 @@ def newpost():
     else:
         return render_template('newpost.html')
 
+@app.route('/register', methods = ['GET','POST'])
+def register():
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        flash(f'Account created successfully for {form.username.data}',category='success')
+        return redirect(url_for('home'))
+    return render_template('register.html', title='Register',form=form)
 
+@app.route('/login', methods = ['GET','POST'])
+def login():
+    form=LoginForm()
+    if form.validate_on_submit():
+        if form.email.data == 'karthik65432@gmail.com':
+            flash(f'Login Successful for {form.email.data}', category='success')
+            return redirect(url_for('newpost'))
+        else:
+            flash(f'Login Failed for {form.email.data}', category='danger')
+    return render_template('login.html', title='Login',form=form)
 
 if __name__ == '__main__':
     app.run(debug=True)
