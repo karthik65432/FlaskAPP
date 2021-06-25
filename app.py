@@ -1,24 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
+from forms import RegistrationForm, LoginForm
+from model import Blogpost, app, db,User
 from datetime import datetime
 import pytz
-from forms import RegistrationForm, LoginForm
-
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posts.db'
-app.config['SECRET_KEY'] = '9886144146'
-db = SQLAlchemy(app)
-
-
-class Blogpost(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    author = db.Column(db.String(20), nullable=False, default='N/A')
-    date_posted = db.Column(db.DateTime(), nullable=False, default=datetime.now(pytz.timezone('Asia/Kolkata')))
-
-    def __repr__(self):
-        return 'Blog post ' + str(self.id)
 
 
 @app.route('/')
@@ -68,6 +53,9 @@ def newpost():
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
+        user=User(username=form.username.data,email=form.email.data,password=form.password.data)
+        db.session.add(user)
+        db.session.commit()
         flash(f'Account created successfully for {form.username.data}',category='success')
         return redirect(url_for('home'))
     return render_template('register.html', title='Register',form=form)
@@ -76,7 +64,8 @@ def register():
 def login():
     form=LoginForm()
     if form.validate_on_submit():
-        if form.email.data == 'karthik65432@gmail.com':
+        user = User.query.filter_by(email=form.email.data).first()
+        if form.email.data == user.email and form.password.data == user.password:
             flash(f'Login Successful for {form.email.data}', category='success')
             return redirect(url_for('newpost'))
         else:
